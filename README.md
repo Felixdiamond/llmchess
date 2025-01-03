@@ -80,7 +80,8 @@ This project is built with modern technologies I love:
 - 🎬 [Framer Motion](https://www.framer.com/motion/) - For smooth animations
 - ♟️ [chess.js](https://github.com/jhlywa/chess.js) - For chess logic
 - 🤖 [OpenAI API](https://platform.openai.com) - For GPT-4 integration
-- 🧠 [Google AI API](https://ai.google.dev/) - For Gemini integration (coming soon!)
+- 🧠 [Google AI API](https://ai.google.dev/) - For Gemini integration
+- 🤖 [Anthropic API](https://docs.anthropic.com/) - For Claude integration
 
 ## 🤝 Contributing
 
