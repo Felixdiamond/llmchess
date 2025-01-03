@@ -108,45 +108,76 @@ export function ChessboardComponent({ isDrawingMode }: ChessboardProps) {
     setOptionSquares({});
   }, [moveFrom, state.fen, state.isThinking, isDrawingMode, getMoveOptions, makeMove]);
 
-  // Handle mouse events for drawing
+  // Handle drawing mode interactions
   const handleDrawing = useCallback((square: Square) => {
     if (!isDrawingMode || state.isThinking) return;
     
-    setIsDrawing(true);
-    setDrawStart(square);
-
     if (selectedTool === 'eraser') {
+      // Erase any arrows that start or end at this square
       setArrows(prev => prev.filter(a => a[0] !== square && a[1] !== square));
+      // Erase any shapes on this square
       setShapes(prev => prev.filter(s => s.square !== square));
-    } else if (selectedTool !== 'arrow') {
+      return;
+    }
+
+    if (selectedTool !== 'arrow') {
       setShapes(prev => [
         ...prev.filter(s => s.square !== square),
-        { square, color: selectedColor, type: selectedTool }
+        { square, color: selectedColor, type: selectedTool as 'circle' | 'square' }
       ]);
+      return;
     }
-  }, [state.isThinking, isDrawingMode, selectedTool, selectedColor]);
+
+    // Arrow drawing logic
+    if (!isDrawing) {
+      // Start drawing arrow
+      setIsDrawing(true);
+      setDrawStart(square);
+      setCurrentArrow(null);
+    } else {
+      // Finish drawing arrow
+      if (drawStart && square !== drawStart) {
+        setArrows(prev => [...prev, [drawStart, square, selectedColor]]);
+      }
+      setIsDrawing(false);
+      setDrawStart(null);
+      setCurrentArrow(null);
+    }
+  }, [isDrawingMode, state.isThinking, selectedTool, selectedColor, isDrawing, drawStart]);
 
   const onMouseEnter = useCallback((square: Square) => {
-    if (!isDrawing || !drawStart || !isDrawingMode) return;
+    if (!isDrawingMode) return;
 
-    if (selectedTool === 'arrow' && square !== drawStart) {
-      // Update current arrow while dragging
+    if (isDrawing && drawStart && selectedTool === 'arrow' && square !== drawStart) {
       setCurrentArrow([drawStart, square, selectedColor]);
     } else if (selectedTool === 'eraser') {
-      setArrows(prev => prev.filter(a => a[0] !== square && a[1] !== square));
+      // Erase any arrows that pass through this square
+      setArrows(prev => prev.filter(arrow => {
+        const [start, end] = arrow;
+        return !(start === square || end === square);
+      }));
+      // Erase any shapes on this square
       setShapes(prev => prev.filter(s => s.square !== square));
     }
   }, [isDrawing, drawStart, isDrawingMode, selectedTool, selectedColor]);
 
   const onMouseUp = useCallback(() => {
-    if (currentArrow) {
-      // Add the current arrow to the arrows list when mouse is released
-      setArrows(prev => [...prev, currentArrow]);
+    // Only handle mouse up for non-arrow tools or eraser
+    if (selectedTool !== 'arrow') {
+      setIsDrawing(false);
+      setDrawStart(null);
       setCurrentArrow(null);
     }
-    setIsDrawing(false);
-    setDrawStart(null);
-  }, [currentArrow]);
+  }, [selectedTool]);
+
+  const onMouseLeave = useCallback(() => {
+    // Only cancel drawing if using non-arrow tools or eraser
+    if (selectedTool !== 'arrow') {
+      setIsDrawing(false);
+      setDrawStart(null);
+      setCurrentArrow(null);
+    }
+  }, [selectedTool]);
 
   // Clear all drawings
   const clearDrawings = useCallback(() => {
@@ -159,24 +190,37 @@ export function ChessboardComponent({ isDrawingMode }: ChessboardProps) {
     if (!boardRef.current) return;
     
     try {
-      // Create a wrapper div with the same background
+      // Create a wrapper div with proper styling
       const wrapper = document.createElement('div');
-      wrapper.style.backgroundColor = getComputedStyle(document.documentElement).getPropertyValue('--board-dark');
-      wrapper.appendChild(boardRef.current.cloneNode(true));
+      wrapper.style.backgroundColor = getComputedStyle(document.documentElement).getPropertyValue('--board-background');
+      wrapper.style.padding = '20px';
+      wrapper.style.borderRadius = '8px';
+      
+      // Clone the board and ensure proper styling
+      const boardClone = boardRef.current.cloneNode(true) as HTMLElement;
+      
+      // Add any active arrows or shapes to the clone
+      const boardComponent = boardClone.querySelector('.board-container');
+      if (boardComponent) {
+        boardComponent.classList.add('screenshot');
+      }
+      
+      wrapper.appendChild(boardClone);
       document.body.appendChild(wrapper);
 
       const canvas = await html2canvas(wrapper, {
-        backgroundColor: getComputedStyle(document.documentElement).getPropertyValue('--board-dark'),
-        scale: 2 // Higher quality
+        backgroundColor: getComputedStyle(document.documentElement).getPropertyValue('--board-background'),
+        scale: 2,
+        logging: false,
+        width: boardRef.current.offsetWidth + 40,
+        height: boardRef.current.offsetHeight + 40,
       });
 
       document.body.removeChild(wrapper);
       
-      // Convert to blob
       canvas.toBlob((blob: Blob | null) => {
         if (!blob) return;
         
-        // Create download link
         const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.href = url;
@@ -185,7 +229,7 @@ export function ChessboardComponent({ isDrawingMode }: ChessboardProps) {
         link.click();
         document.body.removeChild(link);
         URL.revokeObjectURL(url);
-      }, 'image/png');
+      }, 'image/png', 1.0);
     } catch (error) {
       console.error('Error taking screenshot:', error);
     }
@@ -198,7 +242,7 @@ export function ChessboardComponent({ isDrawingMode }: ChessboardProps) {
       [state.lastMove.from]: { backgroundColor: 'rgba(99, 102, 241, 0.2)' },
       [state.lastMove.to]: { backgroundColor: 'rgba(99, 102, 241, 0.2)' }
     } : {}),
-    ...shapes.reduce((acc, { square, color, type }) => ({
+    ...shapes.reduce<SquareStyles>((acc, { square, color, type }) => ({
       ...acc,
       [square]: {
         background: type === 'circle' 
@@ -328,10 +372,12 @@ export function ChessboardComponent({ isDrawingMode }: ChessboardProps) {
       )}
 
       <div 
-        className="relative w-full h-full" 
+        className="relative w-full h-full board-container" 
         ref={boardRef}
         onContextMenu={e => e.preventDefault()}
         onMouseUp={onMouseUp}
+        onMouseLeave={onMouseLeave}
+        style={{ backgroundColor: 'var(--board-background)' }}
       >
         <Chessboard 
           id="mainBoard"
@@ -340,8 +386,14 @@ export function ChessboardComponent({ isDrawingMode }: ChessboardProps) {
           onSquareRightClick={handleDrawing}
           onMouseOverSquare={onMouseEnter}
           boardOrientation={state.settings.aiColor === 'w' ? 'black' : 'white'}
-          customDarkSquareStyle={{ backgroundColor: 'var(--board-dark)' }}
-          customLightSquareStyle={{ backgroundColor: 'var(--board-light)' }}
+          customDarkSquareStyle={{ 
+            backgroundColor: 'var(--board-dark)',
+            boxShadow: 'inset 0 0 0 1px rgba(0, 0, 0, 0.1)'
+          }}
+          customLightSquareStyle={{ 
+            backgroundColor: 'var(--board-light)',
+            boxShadow: 'inset 0 0 0 1px rgba(255, 255, 255, 0.05)'
+          }}
           customSquareStyles={customSquareStyles}
           customArrows={currentArrow ? [...arrows, currentArrow] : arrows}
           arePiecesDraggable={false}

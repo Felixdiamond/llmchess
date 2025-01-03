@@ -73,7 +73,7 @@ export default function Home() {
                 <div className="relative">
                   <FaChessKnight className="w-7 h-7 text-[#4f46e5]" />
                 </div>
-                <h1 className="text-2xl font-bold bg-gradient-to-r from-white via-white/90 to-white/70 bg-clip-text text-transparent">
+                <h1 className="text-2xl font-bold bg-gradient-to-r from-white via-white/90 to-white/70 bg-clip-text text-transparent light:text-black">
                   LLM Chess
                 </h1>
               </motion.div>

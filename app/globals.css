@@ -29,6 +29,9 @@
     --panel-bg: rgba(255, 255, 255, 0.7);
     --panel-border: rgba(0, 0, 0, 0.06);
     --panel-hover: rgba(79, 70, 229, 0.1);
+    --board-light: #E8EDF9;
+    --board-dark: #B7C0D8;
+    --board-background: #FFFFFF;
   }
 
   .dark {
@@ -56,6 +59,9 @@
     --panel-bg: rgba(0, 0, 0, 0.3);
     --panel-border: rgba(255, 255, 255, 0.1);
     --panel-hover: rgba(79, 70, 229, 0.2);
+    --board-light: #2b2456;
+    --board-dark: #1a1635;
+    --board-background: #0d0b1d;
   }
 }
 
@@ -427,4 +433,24 @@
 @keyframes fade-in-out {
   0%, 100% { opacity: 0; }
   50% { opacity: 1; }
+}
+
+.board-container {
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+.board-container.screenshot {
+  box-shadow: none;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Ensure arrows and shapes are visible in screenshots */
+.screenshot .arrow {
+  z-index: 10;
+}
+
+.screenshot .shape {
+  z-index: 9;
 }

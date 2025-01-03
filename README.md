@@ -46,12 +46,16 @@ pnpm install
    ```
 
    You'll need to add your API keys to the `.env` file, check their docs for that, i'm not writing it here.
+
 4. Fire up the development server:
    Again, superior bun :)
+
    ```bash
    bun dev
    ```
+
    Or this:
+
    ```bash
    npm run dev
    # or
@@ -74,7 +78,7 @@ The project is actively under development, and I'm continuously working to impro
 
 This project is built with modern technologies I love:
 
-- ⚡ [Next.js 14](https://nextjs.org/) - For blazing-fast performance
+- ⚡ [Next.js 15](https://nextjs.org/) - For blazing-fast performance
 - 📘 [TypeScript](https://www.typescriptlang.org/) - For type safety
 - 🎨 [Tailwind CSS](https://tailwindcss.com/) - For beautiful styling
 - 🎬 [Framer Motion](https://www.framer.com/motion/) - For smooth animations
